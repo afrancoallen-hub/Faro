@@ -1586,37 +1586,91 @@ function Configuracion({perfil,setPerfil}){
 
 /* ═══════════════════════════ APP PRINCIPAL ═══════════════════════════ */
 function App(){
-  const[fase,setFase]=useState('onboarding');
-  const[paso,setPaso]=useState(0);
-  const[activo,setActivo]=useState('panel');
-  const[perfil,setPerfil]=useState({
-    nombre:'',edad:'',pais:'Chile',empleo:'formal',ingreso:'',moneda:'CLP',
-    ingresoAdicional:'',frecuencia:'mensual',estadoCivil:'soltero',hijos:'',
+  const [fase, setFase] = useState('auth');        // ← Cambiado: empieza en 'auth'
+  const [paso, setPaso] = useState(0);
+  const [activo, setActivo] = useState('panel');
+  const [perfil, setPerfil] = useState({
+    nombre:'', edad:'', pais:'Chile', empleo:'formal', ingreso:'', moneda:'CLP',
+    ingresoAdicional:'', frecuencia:'mensual', estadoCivil:'soltero', hijos:'',
     gastos:{arriendo:'',alimentacion:'',transporte:'',electricidad:'',agua:'',gas:'',internet:'',telefono:'',seguro:'',otros:''},
-    metas:[],ahorro:'',deuda:'',toleranciaRiesgo:5,apiKey:localStorage.getItem('faro_api_key')||'',
+    metas:[], ahorro:'', deuda:'', toleranciaRiesgo:5, apiKey: localStorage.getItem('faro_api_key')||'',
   });
-  const[txns,setTxns]=useState([]);
-  const[metas,setMetas]=useState([]);
-  const[proyectos,setProyectos]=useState([]);
-  const[chatMsgs,setChatMsgs]=useState([]);
+  const [txns, setTxns] = useState([]);
+  const [metas, setMetas] = useState([]);
+  const [proyectos, setProyectos] = useState([]);
+  const [chatMsgs, setChatMsgs] = useState([]);
+  const [authError, setAuthError] = useState('');
 
-  useEffect(()=>{if(perfil.apiKey) localStorage.setItem('faro_api_key',perfil.apiKey);},[perfil.apiKey]);
+  // Detectar si ya hay usuario logueado
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(window.auth, (user) => {
+      if (user) {
+        // Usuario ya logueado → ir directo a onboarding o app
+        setFase('onboarding');
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
-  const completar=()=>{
-    const t=genTransacciones(perfil);setTxns(t);
-    const ms=(perfil.metas||[]).map(id=>{
-      const g=METAS_OPT.find(x=>x.id===id);
-      return{id:id+'-'+Date.now(),label:g?.label,icon:g?.icon,color:g?.color,objetivo:0,ahorrado:0,fecha:''};
+  const completar = () => {
+    const t = genTransacciones(perfil); 
+    setTxns(t);
+    const ms = (perfil.metas||[]).map(id => {
+      const g = METAS_OPT.find(x => x.id === id);
+      return {id: id+'-'+Date.now(), label: g?.label, icon: g?.icon, color: g?.color, objetivo: 0, ahorrado: 0, fecha: ''};
     });
     setMetas(ms);
-    setChatMsgs([{rol:'asistente',contenido:`¡Hola ${perfil.nombre}! 👋 Soy tu asesor financiero FARO.\n\nCargué tu perfil y estoy listo para darte asesoría específica y personalizada — no consejos genéricos.\n\nPuedo ayudarte a:\n• Identificar tus fugas financieras\n• Evaluar cualquier decisión de compra (¿debo comprar X?)\n• Construir una estrategia de ahorro e inversión\n• Orientarte sobre impuestos y previsión en ${perfil.pais}\n\n¿Por dónde quieres empezar?`}]);
+    setChatMsgs([{rol:'asistente', contenido: `¡Hola ${perfil.nombre || 'Usuario'}! 👋 Soy tu asesor financiero FARO...`}]);
     setFase('app');
   };
 
-  const puntaje=calcPuntaje(perfil,txns);
+  const puntaje = calcPuntaje(perfil, txns);
 
-  if(fase==='onboarding') return <Onboarding paso={paso} setPaso={setPaso} perfil={perfil} setP={setPerfil} onCompleto={completar}/>;
+  // Pantalla de Auth (lo primero que ve el usuario)
+  if (fase === 'auth') {
+    return (
+      <div style={{minHeight:'100vh', background:C.bg, display:'flex', alignItems:'center', justifyContent:'center', padding:'24px'}}>
+        <Tarjeta style={{width:'420px', padding:'40px 32px', textAlign:'center'}}>
+          <div style={{fontFamily:'Fraunces', fontSize:'42px', fontWeight:700, color:C.accent, marginBottom:'8px'}}>FARO</div>
+          <div style={{fontSize:'18px', color:C.muted, marginBottom:'32px'}}>Tu Asesor Financiero Personal</div>
 
+          <div style={{marginBottom:'24px'}}>
+            <button onClick={() => {
+              const email = prompt("Correo electrónico:");
+              const password = prompt("Contraseña (mínimo 6 caracteres):");
+              const nombre = prompt("Nombre (opcional):") || "";
+              if (email && password) {
+                window.registrarUsuario(email, password, nombre)
+                  .then(() => setFase('onboarding'))
+                  .catch(err => alert("Error: " + err.message));
+              }
+            }} style={{width:'100%', padding:'14px', background:C.accent, color:'#030D07', border:'none', borderRadius:'8px', fontSize:'16px', marginBottom:'12px', cursor:'pointer'}}>
+              Registrarse con Email
+            </button>
+
+            <button onClick={() => {
+              const email = prompt("Correo electrónico:");
+              const password = prompt("Contraseña:");
+              if (email && password) {
+                window.iniciarSesion(email, password)
+                  .then(() => setFase('onboarding'))
+                  .catch(err => alert("Error: " + err.message));
+              }
+            }} style={{width:'100%', padding:'14px', background:'transparent', border:`1px solid ${C.border}`, color:C.text, borderRadius:'8px', fontSize:'16px', cursor:'pointer'}}>
+              Iniciar Sesión
+            </button>
+          </div>
+
+          <div style={{fontSize:'12px', color:C.muted}}>
+            Tus datos se guardarán de forma segura en Firebase.<br/>
+            Solo tú tendrás acceso.
+          </div>
+        </Tarjeta>
+      </div>
+    );
+  }
+
+  if (fase === 'onboarding') return <Onboarding paso={paso} setPaso={setPaso} perfil={perfil} setP={setPerfil} onCompleto={completar}/>;
   const pantallas={
     panel:<Panel perfil={perfil} txns={txns} puntaje={puntaje} setActivo={setActivo}/>,
     transacciones:<Transacciones txns={txns} setTxns={setTxns} perfil={perfil}/>,
@@ -1638,7 +1692,7 @@ function App(){
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-!-- ====================== FIREBASE SDK ====================== -->
+<!-- ====================== FIREBASE SDK ====================== -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
   import { 
@@ -1652,13 +1706,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
   import { 
     getFirestore, 
     doc, 
-    setDoc, 
-    getDoc, 
-    collection, 
-    addDoc 
+    setDoc 
   } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
-  // ←←← TU CONFIGURACIÓN DE FIREBASE (ya la tienes) ←←←
   const firebaseConfig = {
     apiKey: "AIzaSyCOuU3uCX-M-MBt5OpP6UcUxjoc4tgSW6s",
     authDomain: "faro-e4410.firebaseapp.com",
@@ -1668,56 +1718,46 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
     appId: "1:662713689980:web:b190fbb5cb70c4973026f9"
   };
 
-  // Inicializar Firebase
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  console.log("✅ Firebase inicializado correctamente");
+  console.log("✅ Firebase inicializado");
 
-  // ==================== FUNCIONES BÁSICAS ====================
-  window.registrarUsuario = async () => {
-    const email = prompt("Ingresa tu correo electrónico:");
-    const password = prompt("Ingresa una contraseña (mínimo 6 caracteres):");
-    if (!email || !password) return;
+  // Variables globales para que React las use
+  window.auth = auth;
+  window.db = db;
 
+  window.registrarUsuario = async (email, password, nombre = "") => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await setDoc(doc(db, "usuarios", userCredential.user.uid), {
-        email: email,
+        email,
+        nombre: nombre || email.split('@')[0],
         creado: new Date(),
-        nombre: "Usuario FARO"
+        perfilCompletado: false
       });
-      alert("¡Registro exitoso! Ahora puedes iniciar sesión.");
+      return userCredential.user;
     } catch (error) {
-      alert("Error en registro: " + error.message);
+      throw error;
     }
   };
 
-  window.iniciarSesion = async () => {
-    const email = prompt("Correo electrónico:");
-    const password = prompt("Contraseña:");
-    if (!email || !password) return;
-
+  window.iniciarSesion = async (email, password) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      alert("¡Inicio de sesión exitoso!");
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      return userCredential.user;
     } catch (error) {
-      alert("Error al iniciar sesión: " + error.message);
+      throw error;
     }
   };
 
-  window.cerrarSesion = () => {
-    signOut(auth).then(() => alert("Sesión cerrada"));
-  };
+  window.cerrarSesion = () => signOut(auth);
 
-  // Detectar cambios de usuario (útil para futuro)
+  // Escuchar estado de autenticación
   onAuthStateChanged(auth, (user) => {
-    if (user) {
-      console.log("👤 Usuario logueado:", user.uid);
-    } else {
-      console.log("No hay usuario logueado");
-    }
+    window.currentUser = user;
+    console.log(user ? "👤 Usuario logueado: " + user.uid : "No hay usuario logueado");
   });
 </script>
 </body>
