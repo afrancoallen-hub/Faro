@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FARO — Tu Co-Piloto Financiero</title>
+<title>FARO — Tu Asesor Financiero Personal</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -69,7 +69,7 @@ const METAS_OPT=[
   {id:'casa',label:'Casa Propia',icon:'🏠',color:'#38BDF8'},
   {id:'retiro',label:'Retiro',icon:'🌴',color:'#F0B429'},
   {id:'auto',label:'Automóvil',icon:'🚗',color:'#A78BFA'},
-  {id:'viaje',label:'Fondo de Viajes',icon:'✈️',color:'#F472B6'},
+  {id:'deudas',label:'Pago de Deudas',icon:'✈️',color:'#F472B6'},
   {id:'educacion',label:'Educación',icon:'🎓',color:'#22D77A'},
   {id:'negocio',label:'Emprender',icon:'🚀',color:'#FB923C'},
   {id:'inversion',label:'Portafolio Inversión',icon:'📈',color:'#38BDF8'},
@@ -1638,21 +1638,15 @@ function App(){
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script><script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+  //const firebaseConfig = {
+  apiKey: "AIzaSyCOuU3uCX-M-MBt5OpP6UcUxjoc4tgSW6s",
+  authDomain: "faro-e4410.firebaseapp.com",
+  projectId: "faro-e4410",
+  storageBucket: "faro-e4410.firebasestorage.app",
+  messagingSenderId: "662713689980",
+  appId: "1:662713689980:web:b190fbb5cb70c4973026f9"
 </script>
 </body>
 </html>
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    // Usuario solo puede leer/escribir su propio documento
-    match /usuarios/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Datos guardados por cada usuario (subcolección)
-    match /datos_usuarios/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
