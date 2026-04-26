@@ -1638,15 +1638,87 @@ function App(){
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-</script><script type="module">
+!-- ====================== FIREBASE SDK ====================== -->
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-  //const firebaseConfig = {
-  apiKey: "AIzaSyCOuU3uCX-M-MBt5OpP6UcUxjoc4tgSW6s",
-  authDomain: "faro-e4410.firebaseapp.com",
-  projectId: "faro-e4410",
-  storageBucket: "faro-e4410.firebasestorage.app",
-  messagingSenderId: "662713689980",
-  appId: "1:662713689980:web:b190fbb5cb70c4973026f9"
+  import { 
+    getAuth, 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    onAuthStateChanged, 
+    signOut 
+  } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+  
+  import { 
+    getFirestore, 
+    doc, 
+    setDoc, 
+    getDoc, 
+    collection, 
+    addDoc 
+  } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+  // ←←← TU CONFIGURACIÓN DE FIREBASE (ya la tienes) ←←←
+  const firebaseConfig = {
+    apiKey: "AIzaSyCOuU3uCX-M-MBt5OpP6UcUxjoc4tgSW6s",
+    authDomain: "faro-e4410.firebaseapp.com",
+    projectId: "faro-e4410",
+    storageBucket: "faro-e4410.firebasestorage.app",
+    messagingSenderId: "662713689980",
+    appId: "1:662713689980:web:b190fbb5cb70c4973026f9"
+  };
+
+  // Inicializar Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  console.log("✅ Firebase inicializado correctamente");
+
+  // ==================== FUNCIONES BÁSICAS ====================
+  window.registrarUsuario = async () => {
+    const email = prompt("Ingresa tu correo electrónico:");
+    const password = prompt("Ingresa una contraseña (mínimo 6 caracteres):");
+    if (!email || !password) return;
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, "usuarios", userCredential.user.uid), {
+        email: email,
+        creado: new Date(),
+        nombre: "Usuario FARO"
+      });
+      alert("¡Registro exitoso! Ahora puedes iniciar sesión.");
+    } catch (error) {
+      alert("Error en registro: " + error.message);
+    }
+  };
+
+  window.iniciarSesion = async () => {
+    const email = prompt("Correo electrónico:");
+    const password = prompt("Contraseña:");
+    if (!email || !password) return;
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      alert("¡Inicio de sesión exitoso!");
+    } catch (error) {
+      alert("Error al iniciar sesión: " + error.message);
+    }
+  };
+
+  window.cerrarSesion = () => {
+    signOut(auth).then(() => alert("Sesión cerrada"));
+  };
+
+  // Detectar cambios de usuario (útil para futuro)
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      console.log("👤 Usuario logueado:", user.uid);
+    } else {
+      console.log("No hay usuario logueado");
+    }
+  });
 </script>
 </body>
 </html>
