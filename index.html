@@ -27,7 +27,77 @@ button{cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all 
 </head>
 <body>
 <div id="root"></div>
-<script type="text/babel">
+<!-- ====================== FIREBASE SDK ====================== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+  import { 
+    getAuth, 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, 
+    onAuthStateChanged, 
+    signOut 
+  } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+  
+  import { 
+    getFirestore, 
+    doc, 
+    setDoc 
+  } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCOuU3uCX-M-MBt5OpP6UcUxjoc4tgSW6s",
+    authDomain: "faro-e4410.firebaseapp.com",
+    projectId: "faro-e4410",
+    storageBucket: "faro-e4410.firebasestorage.app",
+    messagingSenderId: "662713689980",
+    appId: "1:662713689980:web:b190fbb5cb70c4973026f9"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  console.log("✅ Firebase inicializado correctamente");
+
+  window.auth = auth;
+  window.db = db;
+  window.currentUser = null;
+
+  window.registrarUsuario = async (email, password, nombre = "") => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, "usuarios", userCredential.user.uid), {
+        email,
+        nombre: nombre || email.split('@')[0],
+        creado: new Date(),
+        perfilCompletado: false
+      });
+      return userCredential.user;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  };
+
+  window.iniciarSesion = async (email, password) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      return userCredential.user;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  };
+
+  window.cerrarSesion = () => signOut(auth);
+
+  // Escuchar autenticación
+  onAuthStateChanged(auth, (user) => {
+    window.currentUser = user;
+    console.log(user ? `👤 Usuario logueado: ${user.uid}` : "No hay usuario logueado");
+  });
+</script>
+  <script type="text/babel">
 const{useState,useEffect,useRef,useMemo}=React;
 
 /* ═══════════════════════════ COLORES ═══════════════════════════ */
@@ -1603,9 +1673,10 @@ function App(){
 
   // Detectar si ya hay usuario logueado
   useEffect(() => {
+    if (!window.auth) return;   // ← Protección importante
+
     const unsubscribe = onAuthStateChanged(window.auth, (user) => {
       if (user) {
-        // Usuario ya logueado → ir directo a onboarding o app
         setFase('onboarding');
       }
     });
@@ -1692,73 +1763,6 @@ function App(){
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-<!-- ====================== FIREBASE SDK ====================== -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-  import { 
-    getAuth, 
-    createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword, 
-    onAuthStateChanged, 
-    signOut 
-  } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
-  
-  import { 
-    getFirestore, 
-    doc, 
-    setDoc 
-  } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyCOuU3uCX-M-MBt5OpP6UcUxjoc4tgSW6s",
-    authDomain: "faro-e4410.firebaseapp.com",
-    projectId: "faro-e4410",
-    storageBucket: "faro-e4410.firebasestorage.app",
-    messagingSenderId: "662713689980",
-    appId: "1:662713689980:web:b190fbb5cb70c4973026f9"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  console.log("✅ Firebase inicializado");
-
-  // Variables globales para que React las use
-  window.auth = auth;
-  window.db = db;
-
-  window.registrarUsuario = async (email, password, nombre = "") => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await setDoc(doc(db, "usuarios", userCredential.user.uid), {
-        email,
-        nombre: nombre || email.split('@')[0],
-        creado: new Date(),
-        perfilCompletado: false
-      });
-      return userCredential.user;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  window.iniciarSesion = async (email, password) => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return userCredential.user;
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  window.cerrarSesion = () => signOut(auth);
-
-  // Escuchar estado de autenticación
-  onAuthStateChanged(auth, (user) => {
-    window.currentUser = user;
-    console.log(user ? "👤 Usuario logueado: " + user.uid : "No hay usuario logueado");
-  });
 </script>
 </body>
 </html>
