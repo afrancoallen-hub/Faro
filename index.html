@@ -62,6 +62,7 @@ button{cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all 
   window.auth = auth;
   window.db = db;
   window.currentUser = null;
+  window.onAuthStateChanged = onAuthStateChanged;
 
   window.registrarUsuario = async (email, password, nombre = "") => {
     try {
@@ -1671,15 +1672,20 @@ function App(){
   const [chatMsgs, setChatMsgs] = useState([]);
   const [authError, setAuthError] = useState('');
 
-  // Detectar si ya hay usuario logueado
+    // Detectar si ya hay usuario logueado
   useEffect(() => {
-    if (!window.auth) return;   // ← Protección importante
+    if (typeof window.onAuthStateChanged !== 'function' || !window.auth) {
+      console.warn("Firebase aún no está listo");
+      return;
+    }
 
-    const unsubscribe = onAuthStateChanged(window.auth, (user) => {
+    const unsubscribe = window.onAuthStateChanged(window.auth, (user) => {
       if (user) {
+        console.log("Usuario ya logueado, saltando a onboarding");
         setFase('onboarding');
       }
     });
+
     return () => unsubscribe();
   }, []);
 
