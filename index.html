@@ -1787,6 +1787,22 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
         });
     });
   }
+</script><script>
+  // Mejor registro del Service Worker + debug
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => {
+          console.log('✅ Service Worker registrado con éxito (Scope: ' + reg.scope + ')');
+        })
+        .catch(err => {
+          console.error('❌ Error al registrar Service Worker:', err);
+        });
+    });
+  }
+
+  // Debug del manifest (opcional pero útil)
+  console.log('Manifest cargado:', document.querySelector('link[rel="manifest"]') ? 'Sí' : 'No');
 </script>
 </body>
 </html>
