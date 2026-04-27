@@ -102,14 +102,6 @@ button{cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all 
     window.currentUser = user;
     console.log(user ? `👤 Usuario logueado: ${user.uid}` : "No hay usuario logueado");
   });
-  <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log('Service Worker registrado con éxito'))
-        .catch(err => console.log('Error al registrar Service Worker:', err));
-    });
-  }
 </script>
   <script type="text/babel">
 const{useState,useEffect,useRef,useMemo}=React;
@@ -1782,6 +1774,19 @@ function App(){
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script><script>
+  // Registrar Service Worker para PWA
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('sw.js')
+        .then(function(reg) {
+          console.log('✅ Service Worker registrado correctamente');
+        })
+        .catch(function(err) {
+          console.log('❌ Error al registrar Service Worker:', err);
+        });
+    });
+  }
 </script>
 </body>
 </html>
